@@ -113,7 +113,24 @@ def identify_contact():
                     raise e
 
         elif email and phoneNumber:
-            pass
+            primaryContractByEmail = get_primary_contact_by_email(email)
+            primaryContractByPhoneNumber = get_primary_contact_by_phone(phoneNumber)
+            if not primaryContractByEmail and primaryContractByPhoneNumber:
+                newContact = Contact(email=email,linkPrecedence="secondary",linkedId=primaryContractByPhoneNumber.id,phoneNumber=phoneNumber)
+                db.session.add(newContact)
+                db.session.commit()
+                primaryContract = primaryContractByPhoneNumber
+            elif primaryContractByEmail and not primaryContractByPhoneNumber:
+                newContact = Contact(phoneNumber=phoneNumber,linkPrecedence="secondary",linkedId=primaryContractByEmail.id,email=email)
+                db.session.add(newContact)
+                db.session.commit()
+                primaryContract = primaryContractByEmail
+            else:
+                if primaryContractByEmail == primaryContractByPhoneNumber:
+                    primaryContract = primaryContractByPhoneNumber
+                else:
+                    pass
+
         
         if primaryContract:
             contacts = gather_contacts(primaryContract)
