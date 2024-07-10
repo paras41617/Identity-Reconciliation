@@ -50,22 +50,38 @@ Go to the project directory
   cd Identity-Reconciliation-master
 ```
 
-Install dependencies (recommended : create a virtual environment)
-
-```bash
-  pip install -r requirements.txt
-```
-
 Create a .env file (your credentials)
 
 ```bash
   Add DATABASE_URL=postgresql://pguser:pgpassword@pghost/pgdatabase
 ```
 
+#### Via Localhost 
+
+Install dependencies (recommended : create a virtual environment)
+
+```bash
+  pip install -r requirements.txt
+```
+
 Start the server
 
 ```bash
   flask run
+```
+
+#### Using Docker
+
+Create the Docker Image
+
+```bash
+  docker build -t paras41617-identity-reconciliation .
+```
+
+Run the Container (ensure that 5000 port is not being used by any other service)
+
+```bash
+  docker run -p 5000:5000 paras41617-identity-reconciliation
 ```
 
 
