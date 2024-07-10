@@ -34,24 +34,33 @@ def identify_contact():
     with app.app_context():
 
         def get_primary_contact_by_email(email):
-            primary_contact = Contact.query.filter_by(email=email, linkPrecedence='primary').first()
-            if not primary_contact:
-                secondary_contact = Contact.query.filter_by(email=email).first()
-                if secondary_contact:
-                    primary_contact = Contact.query.filter_by(id=secondary_contact.linkedId).first()
+            primary_contact = Contact.query.filter_by(email=email).first()
+            if primary_contact:
+                while primary_contact.linkedId:
+                    primary_contact = Contact.query.filter_by(id=primary_contact.linkedId).first()
             return primary_contact
 
         def get_primary_contact_by_phone(phone_number):
-            primary_contact = Contact.query.filter_by(phoneNumber=phone_number, linkPrecedence='primary').first()
-            if not primary_contact:
-                secondary_contact = Contact.query.filter_by(phoneNumber=phone_number).first()
-                if secondary_contact:
-                    primary_contact = Contact.query.filter_by(id=secondary_contact.linkedId).first()
+            primary_contact = Contact.query.filter_by(phoneNumber=phone_number).first()
+            if primary_contact:
+                while primary_contact.linkedId:
+                    primary_contact = Contact.query.filter_by(id=primary_contact.linkedId).first()
             return primary_contact
+        
+        def find_last_contact(primary_contact):
+            currentContract = primary_contact
+            while (primary_contact):
+                currentContract = primary_contact
+                primary_contact = Contact.query.filter_by(linkedId=primary_contact.id).first()
+            return currentContract
 
         def gather_contacts(primary_contact):
-            contacts = Contact.query.filter_by(linkedId=primary_contact.id).all()
-            contacts.append(primary_contact)
+            contacts = []
+            currentContract = primary_contact
+            while (primary_contact):
+                currentContract = primary_contact
+                contacts.append(currentContract)
+                primary_contact = Contact.query.filter_by(linkedId=primary_contact.id).first()
             return contacts
 
         def prepare_response_data(contacts):
@@ -116,12 +125,14 @@ def identify_contact():
             primaryContractByEmail = get_primary_contact_by_email(email)
             primaryContractByPhoneNumber = get_primary_contact_by_phone(phoneNumber)
             if not primaryContractByEmail and primaryContractByPhoneNumber:
-                newContact = Contact(email=email,linkPrecedence="secondary",linkedId=primaryContractByPhoneNumber.id,phoneNumber=phoneNumber)
+                latestContact = find_last_contact(primaryContractByPhoneNumber)
+                newContact = Contact(email=email,linkPrecedence="secondary",linkedId=latestContact.id,phoneNumber=phoneNumber)
                 db.session.add(newContact)
                 db.session.commit()
                 primaryContract = primaryContractByPhoneNumber
             elif primaryContractByEmail and not primaryContractByPhoneNumber:
-                newContact = Contact(phoneNumber=phoneNumber,linkPrecedence="secondary",linkedId=primaryContractByEmail.id,email=email)
+                latestContact = find_last_contact(primaryContractByEmail)
+                newContact = Contact(phoneNumber=phoneNumber,linkPrecedence="secondary",linkedId=latestContact.id,email=email)
                 db.session.add(newContact)
                 db.session.commit()
                 primaryContract = primaryContractByEmail
