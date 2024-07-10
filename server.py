@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
 
 app = Flask(__name__)
 
@@ -89,9 +90,27 @@ def identify_contact():
 
         if email and not phoneNumber:
             primaryContract = get_primary_contact_by_email(email)
+            if not primaryContract:
+                try:
+                    newContact = Contact(email=email,linkPrecedence="primary")
+                    db.session.add(newContact)
+                    db.session.commit()
+                    primaryContract = newContact
+                except IntegrityError as e:
+                    db.session.rollback()
+                    raise e
                 
         elif phoneNumber and not email:
             primaryContract = get_primary_contact_by_phone(phoneNumber)
+            if not primaryContract:
+                try:
+                    newContact = Contact(phoneNumber=phoneNumber,linkPrecedence="primary")
+                    db.session.add(newContact)
+                    db.session.commit()
+                    primaryContract = newContact
+                except IntegrityError as e:
+                    db.session.rollback()
+                    raise e
 
         elif email and phoneNumber:
             pass
