@@ -140,7 +140,12 @@ def identify_contact():
                 if primaryContractByEmail == primaryContractByPhoneNumber:
                     primaryContract = primaryContractByPhoneNumber
                 else:
-                    pass
+                    currentTop = primaryContractByEmail
+                    latestContact = find_last_contact(primaryContractByEmail)
+                    primaryContractByPhoneNumber.linkedId = latestContact.id
+                    primaryContractByPhoneNumber.linkPrecedence = "secondary"
+                    db.session.commit()
+                    primaryContract = currentTop
 
         
         if primaryContract:
